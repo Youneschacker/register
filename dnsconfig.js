@@ -12,7 +12,11 @@ function getDomainsList(filesPath) {
             .pop()
             .replace(/\.json$/, "");
 
-        result.push({ name: name, data: require(files[i]) });
+        try {
+            result.push({ name: name, data: require(files[i]) });
+        } catch (e) {
+            throw new Error("Failed to load domain file " + files[i] + ": " + e.message);
+        }
     }
 
     return result;
