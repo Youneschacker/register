@@ -54,17 +54,35 @@ for (const subdomain of reserved) {
 }
 
 fs.readdir(directoryPath, function (err, files) {
-    if (err) throw err;
+    if (err) {
+        console.error(`Failed to read domains directory: ${err.message}`);
+        process.exit(1);
+    }
 
     let processedCount = 0;
+    let hasError = false;
 
     files.forEach(function (file) {
         const filePath = path.join(directoryPath, file);
 
         fs.readFile(filePath, "utf8", (err, data) => {
-            if (err) throw err;
+            if (err) {
+                console.error(`Failed to read file ${file}: ${err.message}`);
+                hasError = true;
+                processedCount++;
+                return;
+            }
 
-            const item = JSON.parse(data);
+            let item;
+            try {
+                item = JSON.parse(data);
+            } catch (parseErr) {
+                console.error(`Failed to parse JSON in ${file}: ${parseErr.message}`);
+                hasError = true;
+                processedCount++;
+                return;
+            }
+
             const name = path.parse(file).name;
 
             item.domain = name + ".is-a.dev";
@@ -87,10 +105,17 @@ fs.readdir(directoryPath, function (err, files) {
 
             processedCount++;
             if (processedCount === files.length) {
+                if (hasError) {
+                    console.error("Completed with errors. Some files were skipped.");
+                }
+
                 v2.sort((a, b) => a.domain.localeCompare(b.subdomain));
 
                 fs.writeFile("raw-api/v2.json", JSON.stringify(v2), (err) => {
-                    if (err) throw err;
+                    if (err) {
+                        console.error(`Failed to write raw-api/v2.json: ${err.message}`);
+                        process.exit(1);
+                    }
                 });
             }
         });
