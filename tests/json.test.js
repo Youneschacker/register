@@ -85,7 +85,7 @@ async function validateFields(t, obj, fields, file, prefix = "") {
     for (const key of Object.keys(fields)) {
         const fieldPath = prefix ? `${prefix}.${key}` : key;
 
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
             t.is(typeof obj[key], fields[key], `${file}: Field ${fieldPath} should be of type ${fields[key]}`);
         } else if (fields === requiredFields || fields === requiredOwnerFields) {
             t.true(false, `${file}: Missing required field: ${fieldPath}`);
@@ -150,7 +150,7 @@ async function processFile(file, t) {
     }
 
     for (const field of blockedFields) {
-        t.true(!data.hasOwnProperty(field), `${file}: Disallowed field: ${field}`);
+        t.true(!Object.prototype.hasOwnProperty.call(data, field), `${file}: Disallowed field: ${field}`);
     }
 }
 

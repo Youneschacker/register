@@ -13,6 +13,10 @@ on:
 
     workflow_dispatch:
 
+permissions:
+    contents: read
+    pull-requests: read
+
 concurrency:
     group: ${{ github.ref }}-ci
 
@@ -27,20 +31,24 @@ jobs:
 
             - name: Fetch PR information
               if: github.event_name == 'pull_request'
-              run: |
-                  echo "PR_AUTHOR=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
-                  echo "PR_AUTHOR_ID=${{ github.event.pull_request.user.id }}" >> $GITHUB_ENV
-
-                  LABELS=$(gh api --jq '[.labels[].name]' /repos/{owner}/{repo}/pulls/${{ github.event.number }})
-                  echo "PR_LABELS=$LABELS" >> $GITHUB_ENV
-
-                  FILES=$(gh api --jq '[.[] | select(.status != "removed") | .filename]' /repos/{owner}/{repo}/pulls/${{ github.event.number }}/files)
-                  echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
-
-                  REMOVED_FILE_DATA=$(gh api --jq '[.[] | select(.status == "removed") | {name: .filename, data: .patch}]' /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files)
-                  echo "DELETED_FILES=$REMOVED_FILE_DATA" >> $GITHUB_ENV
               env:
                   GH_TOKEN: ${{ github.token }}
+                  PR_LOGIN: ${{ github.event.pull_request.user.login }}
+                  PR_USER_ID: ${{ github.event.pull_request.user.id }}
+                  PR_NUM: ${{ github.event.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  echo "PR_AUTHOR=$PR_LOGIN" >> $GITHUB_ENV
+                  echo "PR_AUTHOR_ID=$PR_USER_ID" >> $GITHUB_ENV
+
+                  LABELS=$(gh api --jq '[.labels[].name]' "/repos/$REPO/pulls/$PR_NUM")
+                  echo "PR_LABELS=$LABELS" >> $GITHUB_ENV
+
+                  FILES=$(gh api --jq '[.[] | select(.status != "removed") | .filename]' "/repos/$REPO/pulls/$PR_NUM/files")
+                  echo "CHANGED_FILES=$FILES" >> $GITHUB_ENV
+
+                  REMOVED_FILE_DATA=$(gh api --jq '[.[] | select(.status == "removed") | {name: .filename, data: .patch}]' "/repos/$REPO/pulls/$PR_NUM/files")
+                  echo "DELETED_FILES=$REMOVED_FILE_DATA" >> $GITHUB_ENV
 
             - name: Run DNSControl tests
               if: github.event_name == 'pull_request' && contains(fromJson(env.CHANGED_FILES), 'dnsconfig.js')
