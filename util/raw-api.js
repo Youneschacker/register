@@ -64,7 +64,13 @@ fs.readdir(directoryPath, function (err, files) {
         fs.readFile(filePath, "utf8", (err, data) => {
             if (err) throw err;
 
-            const item = JSON.parse(data);
+            let item;
+            try {
+                item = JSON.parse(data);
+            } catch (e) {
+                processedCount++;
+                return;
+            }
             const name = path.parse(file).name;
 
             item.domain = name + ".is-a.dev";
