@@ -11,44 +11,30 @@ if (!fs.existsSync(outputDir)) {
 const internal = require(path.join(__dirname, "internal.json"));
 const reserved = require(path.join(__dirname, "reserved.json"));
 
-const v2 = [];
-
-for (const subdomain of internal) {
-    const commonData = {
+function buildCommonData(subdomain) {
+    return {
         domain: `${subdomain}.is-a.dev`,
         subdomain: subdomain,
         owner: {
             username: "is-a-dev"
         }
     };
+}
 
-    const records = {
-        CNAME: "internal.is-a.dev"
-    };
+const v2 = [];
 
+for (const subdomain of internal) {
     v2.push({
-        ...commonData,
-        records: records,
+        ...buildCommonData(subdomain),
+        records: { CNAME: "internal.is-a.dev" },
         internal: true
     });
 }
 
 for (const subdomain of reserved) {
-    const commonData = {
-        domain: `${subdomain}.is-a.dev`,
-        subdomain: subdomain,
-        owner: {
-            username: "is-a-dev"
-        }
-    };
-
-    const records = {
-        URL: "https://is-a.dev/reserved"
-    };
-
     v2.push({
-        ...commonData,
-        records: records,
+        ...buildCommonData(subdomain),
+        records: { URL: "https://is-a.dev/reserved" },
         reserved: true
     });
 }
